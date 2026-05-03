@@ -1,0 +1,48 @@
+const dots = document.querySelectorAll('.pomo-dot');
+          if (pomoSession <= 4) dots[pomoSession - 1].classList.add('done');
+          if (pomoSession < 4) { pomoSession++; document.getElementById('pomoSession').textContent = pomoSession; }
+          showToast('أحسنتِ! وقت الاستراحة ☕');
+        } else { showToast('انتهت الاستراحة، هيا نعود للدراسة 📖'); }
+        pomoRemaining = pomoDuration;
+      }
+      updateTimerDisplay();
+    }, 1000);
+  } else { clearInterval(pomoInterval); }
+}
+function resetTimer() { clearInterval(pomoInterval); pomoRunning = false; pomoRemaining = pomoDuration; document.getElementById('playBtn').textContent = '▶️'; updateTimerDisplay(); }
+function updateTimerDisplay() {
+  const m = Math.floor(pomoRemaining/60).toString().padStart(2,'0');
+  const s = (pomoRemaining%60).toString().padStart(2,'0');
+  document.getElementById('timerDisplay').textContent = ${m}:${s};
+  document.getElementById('timerRing').style.strokeDashoffset = circumference * (1 - pomoRemaining/pomoDuration);
+}
+document.getElementById('timerRing').style.strokeDasharray = circumference;
+document.getElementById('timerRing').style.strokeDashoffset = 0;
+function addAssignment() {
+  const title = document.getElementById('assignTitle').value.trim();
+  const deadline = document.getElementById('assignDeadline').value;
+  if (!title || !deadline) { showToast('يرجى ملء اسم الواجب والتاريخ ⚠️'); return; }
+  assignments.unshift({ id: Date.now(), title, subject: document.getElementById('assignSubject').value.trim(), deadline, type: document.getElementById('assignType').value });
+  document.getElementById('assignTitle').value = '';
+  document.getElementById('assignSubject').value = '';
+  document.getElementById('assignDeadline').value = '';
+  saveAssignments(); renderAssignments();
+  showToast('تم تسجيل الواجب 📚');
+}
+function deleteAssignment(id) { assignments = assignments.filter(x => x.id !== id); saveAssignments(); renderAssignments(); }
+function renderAssignments() {
+  const list = document.getElementById('assignmentsList');
+  if (!assignments.length) { list.innerHTML = '<div class="empty-state"><div class="empty-icon">📚</div><p>لا توجد واجبات مسجّلة بعد</p></div>'; return; }
+  const today = new Date(); today.setHours(0,0,0,0);
+  list.innerHTML = assignments.map(a => {
+    const diff = Math.round((new Date(a.deadline) - today) / 86400000);
+    const [badgeCls, badgeTxt] = diff < 0 ? ['deadline-soon','انتهى الموعد'] : diff === 0 ? ['deadline-soon','اليوم!'] : diff <= 2 ? ['deadline-mid',`بعد ${diff} يوم`] : ['deadline-ok',`${diff} يوم`];
+    return <div class="assignment-item"><div class="assignment-info"><div class="assignment-title">${a.type} - ${a.title}</div><div class="assignment-meta"><span>📘 ${a.subject||'غير محدد'}</span><span>📅 ${a.deadline}</span></div></div><span class="deadline-badge ${badgeCls}">${badgeTxt}</span><button class="todo-delete" onclick="deleteAssignment(${a.id})">🗑</button></div>;
+  }).join('');
+}
+function saveAssignments() { localStorage.setItem('assignments', JSON.stringify(assignments)); }
+function showToast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2800); }
+buildSchedule(); renderTodos(); renderAssignments();
+</script>
+</body>
+</html>
